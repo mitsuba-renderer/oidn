@@ -255,7 +255,10 @@ typedef struct
                             void* payload, uint32_t payloadSize,
                             void (*payloadDeleter)(void*),
                             int alwaysAsync, int profile);
-  void     (*taskWaitAndReleaseExclusive)(void* task);
+  // Waits for a task and releases it. The calling thread participates in the execution.
+  // nanothread's task_wait_and_release_exclusive() is preferred, since it restricts the calling
+  // thread to the work of that task, but task_wait_and_release() works as well.
+  void     (*taskWaitAndRelease)(void* task);
 } OIDNThreadPoolAPI;
 
 // Installs the thread pool used by CPU devices. Must be called before creating the first CPU

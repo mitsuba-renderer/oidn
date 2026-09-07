@@ -208,7 +208,7 @@ OIDN_API_NAMESPACE_BEGIN
         throw Exception(Error::InvalidArgument, "thread pool API is null");
       if (!api->poolCreate || !api->poolDestroy || !api->poolSize || !api->poolThreadId ||
           !api->coreCount || !api->performanceCoreCount || !api->taskSubmitDep ||
-          !api->taskWaitAndReleaseExclusive)
+          !api->taskWaitAndRelease)
         throw Exception(Error::InvalidArgument, "thread pool API is incomplete");
 
       Context& ctx = Context::get();

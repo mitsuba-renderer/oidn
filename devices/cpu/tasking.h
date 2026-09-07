@@ -108,7 +108,7 @@ OIDN_NAMESPACE_BEGIN
     const OIDNThreadPoolAPI& api = getThreadPoolAPI();
     void* task = api.taskSubmitDep(getCurrentThreadPool(), nullptr, 0, uint32_t(numBlocks),
                                    callback, &payload, 0, nullptr, 0, 0);
-    api.taskWaitAndReleaseExclusive(task);
+    api.taskWaitAndRelease(task);
   }
 
   // Splits [0, size) into contiguous blocks and invokes f(begin, end) for each of them
