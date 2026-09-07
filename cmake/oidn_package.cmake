@@ -21,7 +21,11 @@ endif()
 ## Set rpath
 ## -----------------------------------------------------------------------------
 
-if(OIDN_ZIP_MODE)
+if(OIDN_INSTALL_RPATH)
+  # Explicit override used when the libraries are bundled next to each other (e.g. in a wheel)
+  set(CMAKE_SKIP_INSTALL_RPATH OFF)
+  set(CMAKE_INSTALL_RPATH "${OIDN_INSTALL_RPATH}")
+elseif(OIDN_ZIP_MODE)
   set(CMAKE_SKIP_INSTALL_RPATH OFF)
   if(APPLE)
     set(CMAKE_MACOSX_RPATH ON)

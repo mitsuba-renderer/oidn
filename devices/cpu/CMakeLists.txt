@@ -3,19 +3,6 @@
 
 find_package(Threads REQUIRED)
 
-# oneTBB
-set(OIDN_TBB_MIN_VERSION 2017.0)
-if(TBB_ROOT)
-  find_package(TBB ${OIDN_TBB_MIN_VERSION} COMPONENTS tbb CONFIG NO_DEFAULT_PATH)
-else()
-  find_package(TBB ${OIDN_TBB_MIN_VERSION} COMPONENTS tbb CONFIG)
-endif()
-if(NOT TBB_FOUND)
-  # Fall back to our FindTBB.cmake
-  unset(TBB_DIR CACHE)
-  find_package(TBB ${OIDN_TBB_MIN_VERSION} REQUIRED tbb)
-endif()
-
 if(APPLE AND OIDN_ARCH STREQUAL "ARM64")
   # BNNS
   option(OIDN_DEVICE_CPU_BNNS "Enable BNNS for CPU device." ON)
@@ -186,7 +173,7 @@ else()
   )
 endif()
 
-target_link_libraries(OpenImageDenoise_device_cpu PRIVATE OpenImageDenoise_core ${CMAKE_THREAD_LIBS_INIT} TBB::tbb)
+target_link_libraries(OpenImageDenoise_device_cpu PRIVATE OpenImageDenoise_core ${CMAKE_THREAD_LIBS_INIT})
 
 if(OIDN_STATIC_LIB)
   oidn_install_static_module(OpenImageDenoise_device_cpu)
@@ -194,37 +181,4 @@ if(OIDN_STATIC_LIB)
 else()
   oidn_strip_symbols(OpenImageDenoise_device_cpu)
   oidn_install_module(OpenImageDenoise_device_cpu)
-endif()
-
-## -------------------------------------------------------------------------------------------------
-## Install dependencies
-## -------------------------------------------------------------------------------------------------
-
-if(OIDN_INSTALL_DEPENDENCIES)
-  # Install TBB
-  oidn_install_imported_lib(TBB::tbb)
-
-  # Install TBB plugins
-  if(NOT APPLE)
-    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-      get_target_property(_tbb_lib TBB::tbb IMPORTED_LOCATION_DEBUG)
-      set(_tbb_suffix "_debug")
-    else()
-      get_target_property(_tbb_lib TBB::tbb IMPORTED_LOCATION_RELEASE)
-      set(_tbb_suffix "")
-    endif()
-    get_filename_component(_tbb_dir "${_tbb_lib}" DIRECTORY)
-    if(WIN32)
-      file(GLOB _tbb_deps LIST_DIRECTORIES FALSE
-        "${_tbb_dir}/tbbbind${_tbb_suffix}\.dll"
-        "${_tbb_dir}/tbbbind_?_?${_tbb_suffix}\.dll"
-      )
-    else()
-      file(GLOB _tbb_deps LIST_DIRECTORIES FALSE
-        "${_tbb_dir}/libtbbbind${_tbb_suffix}\.so.?"
-        "${_tbb_dir}/libtbbbind_?_?${_tbb_suffix}\.so.?"
-      )
-    endif()
-    oidn_install_lib_files(${_tbb_deps})
-  endif()
 endif()

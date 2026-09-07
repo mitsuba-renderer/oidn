@@ -17,35 +17,17 @@
 #include "cpu_output_process.h"
 #include "cpu_image_copy.h"
 
+#if defined(__APPLE__)
+  #include <pthread/qos.h>
+#endif
+
 OIDN_NAMESPACE_BEGIN
 
   CPUEngine::CPUEngine(CPUDevice* device, int numThreads)
     : device(device)
   {
-    // Get the thread affinities for one thread per core on non-hybrid CPUs with SMT
-  #if !(defined(__APPLE__) && defined(OIDN_ARCH_ARM64))
-    if (device->setAffinity
-      #if TBB_INTERFACE_VERSION >= 12020 // oneTBB 2021.2 or later
-        && tbb::info::core_types().size() <= 1 // non-hybrid cores
-      #endif
-       )
-    {
-      affinity = std::make_shared<ThreadAffinity>(1, device->verbose);
-      if (affinity->getNumThreads() == 0 ||                                           // detection failed
-          tbb::this_task_arena::max_concurrency() == affinity->getNumThreads() ||     // no SMT
-          (tbb::this_task_arena::max_concurrency() % affinity->getNumThreads()) != 0) // hybrid SMT
-        affinity.reset(); // disable affinitization
-    }
-  #endif
-
-    // Create the task arena
-    const int maxNumThreads = affinity ? affinity->getNumThreads() : tbb::this_task_arena::max_concurrency();
-    numThreads = (numThreads > 0) ? min(numThreads, maxNumThreads) : maxNumThreads;
-    arena = std::make_shared<tbb::task_arena>(numThreads);
-
-    // Automatically set the thread affinities
-    if (affinity)
-      observer = std::make_shared<PinningObserver>(affinity, *arena);
+    // Use the shared thread pool unless a specific thread count was requested
+    arena = std::make_shared<TaskArena>(numThreads);
 
     // Start the queue processing thread
     queueThread = std::thread([&]() { processQueue(); });
@@ -59,9 +41,6 @@ OIDN_NAMESPACE_BEGIN
     }
     queueCond.notify_all();
     queueThread.join();
-
-    if (observer)
-      observer.reset();
   }
 
   bool CPUEngine::isConvSupported(Fusion fusion) const
@@ -191,6 +170,11 @@ OIDN_NAMESPACE_BEGIN
 
   void CPUEngine::processQueue()
   {
+  #if defined(__APPLE__)
+    // Match the QoS class of the thread pool workers, which this thread drives and joins
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
+  #endif
+
     for (; ;)
     {
       Task task;

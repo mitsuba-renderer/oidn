@@ -234,6 +234,36 @@ OIDN_API void oidnCommitDevice(OIDNDevice device);
 OIDN_API void oidnSyncDevice(OIDNDevice device);
 
 // -------------------------------------------------------------------------------------------------
+// Thread pool
+// -------------------------------------------------------------------------------------------------
+
+// Entry points of an external nanothread-compatible thread pool used by the CPU device. The
+// signatures match those of the nanothread C API, with its opaque Pool and Task pointers
+// represented as void*.
+typedef struct
+{
+  void*    (*poolCreate)(uint32_t size, int ftz);
+  void     (*poolDestroy)(void* pool);
+  uint32_t (*poolSize)(void* pool);
+  uint32_t (*poolThreadId)();
+  uint32_t (*coreCount)();
+  uint32_t (*performanceCoreCount)();
+  void*    (*taskSubmitDep)(void* pool,
+                            const void* const* parents, uint32_t numParents,
+                            uint32_t size,
+                            void (*func)(uint32_t, void*),
+                            void* payload, uint32_t payloadSize,
+                            void (*payloadDeleter)(void*),
+                            int alwaysAsync, int profile);
+  void     (*taskWaitAndReleaseExclusive)(void* task);
+} OIDNThreadPoolAPI;
+
+// Installs the thread pool used by CPU devices. Must be called before creating the first CPU
+// device. The library never creates threads of its own; without an installed thread pool,
+// CPU device creation fails.
+OIDN_API void oidnSetThreadPoolAPI(const OIDNThreadPoolAPI* api);
+
+// -------------------------------------------------------------------------------------------------
 // Buffer
 // -------------------------------------------------------------------------------------------------
 

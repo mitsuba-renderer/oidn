@@ -68,9 +68,7 @@ OIDN_NAMESPACE_BEGIN
     std::mutex queueMutex;                     // mutex for the queue
     std::condition_variable queueCond;         // condition variable for the queue
 
-    std::shared_ptr<tbb::task_arena> arena;    // task arena where the functions are executed
-    std::shared_ptr<PinningObserver> observer; // task scheduler observer for pinning threads
-    std::shared_ptr<ThreadAffinity> affinity;  // thread affinity manager for pinning threads
+    std::shared_ptr<TaskArena> arena;          // thread pool where the functions are executed
   };
 
 OIDN_NAMESPACE_END

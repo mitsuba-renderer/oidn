@@ -29,34 +29,28 @@ OIDN_NAMESPACE_BEGIN
       using Sum = std::pair<float, int>;
 
       Sum sum =
-        tbb::parallel_deterministic_reduce(
-          tbb::blocked_range2d<int>(0, numBinsH, 0, numBinsW),
+        parallel_deterministic_reduce(
+          numBinsH * numBinsW,
           Sum(0.f, 0),
-          [&](const tbb::blocked_range2d<int>& r, Sum sum) -> Sum
+          [&](int bin, Sum& sum)
           {
-            // Iterate over bins
-            for (int i = r.rows().begin(); i != r.rows().end(); ++i)
+            const int i = bin / numBinsW;
+            const int j = bin % numBinsW;
+
+            // Compute the average luminance in the current bin
+            const int beginH = int(ptrdiff_t(i)   * srcAcc.H / numBinsH);
+            const int beginW = int(ptrdiff_t(j)   * srcAcc.W / numBinsW);
+            const int endH   = int(ptrdiff_t(i+1) * srcAcc.H / numBinsH);
+            const int endW   = int(ptrdiff_t(j+1) * srcAcc.W / numBinsW);
+
+            const float L = ispc::autoexposureDownsample(srcAcc, beginH, endH, beginW, endW);
+
+            // Accumulate the log luminance
+            if (L > eps)
             {
-              for (int j = r.cols().begin(); j != r.cols().end(); ++j)
-              {
-                // Compute the average luminance in the current bin
-                const int beginH = int(ptrdiff_t(i)   * srcAcc.H / numBinsH);
-                const int beginW = int(ptrdiff_t(j)   * srcAcc.W / numBinsW);
-                const int endH   = int(ptrdiff_t(i+1) * srcAcc.H / numBinsH);
-                const int endW   = int(ptrdiff_t(j+1) * srcAcc.W / numBinsW);
-
-                const float L = ispc::autoexposureDownsample(srcAcc, beginH, endH, beginW, endW);
-
-                // Accumulate the log luminance
-                if (L > eps)
-                {
-                  sum.first += math::log2(L);
-                  sum.second++;
-                }
-              }
+              sum.first += math::log2(L);
+              sum.second++;
             }
-
-            return sum;
           },
           [](Sum a, Sum b) -> Sum { return Sum(a.first+b.first, a.second+b.second); }
         );

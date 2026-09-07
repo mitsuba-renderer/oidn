@@ -1,6 +1,6 @@
 [submodule "weights"]
 	path = weights
-	url = ../oidn-weights.git
+	url = https://github.com/RenderKit/oidn-weights.git
 [submodule "cutlass"]
 	path = external/cutlass
 	url = https://github.com/NVIDIA/cutlass.git

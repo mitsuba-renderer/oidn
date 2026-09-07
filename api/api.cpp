@@ -198,6 +198,26 @@ OIDN_API_NAMESPACE_BEGIN
   }
 
   // -----------------------------------------------------------------------------------------------
+  // Thread pool
+  // -----------------------------------------------------------------------------------------------
+
+  OIDN_API void oidnSetThreadPoolAPI(const OIDNThreadPoolAPI* api)
+  {
+    OIDN_TRY
+      if (api == nullptr)
+        throw Exception(Error::InvalidArgument, "thread pool API is null");
+      if (!api->poolCreate || !api->poolDestroy || !api->poolSize || !api->poolThreadId ||
+          !api->coreCount || !api->performanceCoreCount || !api->taskSubmitDep ||
+          !api->taskWaitAndReleaseExclusive)
+        throw Exception(Error::InvalidArgument, "thread pool API is incomplete");
+
+      Context& ctx = Context::get();
+      std::lock_guard<std::mutex> ctxGuard(ctx.getMutex());
+      ctx.setThreadPoolAPI(*api);
+    OIDN_CATCH
+  }
+
+  // -----------------------------------------------------------------------------------------------
   // Device
   // -----------------------------------------------------------------------------------------------
 

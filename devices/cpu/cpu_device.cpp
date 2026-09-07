@@ -192,7 +192,7 @@ OIDN_NAMESPACE_BEGIN
   #endif
 
     numThreads = engine->arena->max_concurrency();
-    setAffinity = bool(engine->affinity);
+    setAffinity = false; // the external thread pool owns its worker threads
 
     subdevices.emplace_back(new Subdevice(std::move(engine)));
 
@@ -213,15 +213,8 @@ OIDN_NAMESPACE_BEGIN
       }
       std::cout << std::endl;
 
-      std::cout << "  Tasking   :";
-      std::cout << " TBB" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR;
-    #if TBB_INTERFACE_VERSION >= 12002
-      std::cout << " TBB_header_interface_" << TBB_INTERFACE_VERSION << " TBB_lib_interface_" << TBB_runtime_interface_version();
-    #else
-      std::cout << " TBB_header_interface_" << TBB_INTERFACE_VERSION << " TBB_lib_interface_" << tbb::TBB_runtime_interface_version();
-    #endif
-      std::cout << std::endl;
-      std::cout << "    Threads : " << numThreads << " (" << (setAffinity ? "affinitized" : "non-affinitized") << ")" << std::endl;
+      std::cout << "  Tasking   : external thread pool" << std::endl;
+      std::cout << "    Threads : " << numThreads << std::endl;
     }
   }
 

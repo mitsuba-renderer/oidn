@@ -1,5 +1,10 @@
 # Intel® Open Image Denoise
 
+> **Note:** this is a modified copy of Intel Open Image Denoise vendored by
+> [mitsuba-oidn](https://github.com/mitsuba-renderer/mitsuba-oidn). The CPU
+> device uses an externally provided thread pool instead of oneTBB. See
+> [MITSUBA_CHANGES.md](MITSUBA_CHANGES.md) for a description of the changes.
+
 This is release v2.5.1 of Intel Open Image Denoise. For changes and new
 features see the [changelog](CHANGELOG.md). Visit
 https://www.openimagedenoise.org for more information.

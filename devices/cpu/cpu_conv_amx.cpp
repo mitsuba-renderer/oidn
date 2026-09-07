@@ -29,9 +29,9 @@ OIDN_NAMESPACE_BEGIN
 
       const size_t N = size_t(OCB) * OHC * OWB; // total number of work items
 
-      tbb::parallel_for(tbb::blocked_range<size_t>(0, N), [&](const tbb::blocked_range<size_t>& r)
+      parallel_for_range(N, [&](size_t begin, size_t end)
       {
-        for (size_t i = r.begin(); i != r.end(); ++i)
+        for (size_t i = begin; i != end; ++i)
         {
           const size_t j = i / OCB;
           const int ocb = int(i % OCB); // output channel block index
@@ -43,8 +43,8 @@ OIDN_NAMESPACE_BEGIN
           const int ohBegin = round_up(ohc * OH / OHC, blockOH);
           const int ohEnd   = min(round_up((ohc + 1) * OH / OHC, blockOH), OH);
 
-          const bool isFirst = (i == r.begin());
-          const bool isLast  = (i == r.end() - 1);
+          const bool isFirst = (i == begin);
+          const bool isLast  = (i == end - 1);
 
           ispc::CPUConvAMXKernel_run_f16(&kernel, oc, ohBegin, ohEnd, ow, isFirst, isLast);
         }

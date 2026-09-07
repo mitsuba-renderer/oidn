@@ -98,6 +98,18 @@ OIDN_NAMESPACE_BEGIN
     Ref<Device> newDevice(int physicalDeviceID);
     Ref<Device> newDevice(DeviceType type);
 
+    // External thread pool used by CPU devices (see oidnSetThreadPoolAPI)
+    void setThreadPoolAPI(const OIDNThreadPoolAPI& api)
+    {
+      threadPoolAPI = api;
+      threadPoolAPISet = true;
+    }
+
+    const OIDNThreadPoolAPI* getThreadPoolAPI() const
+    {
+      return threadPoolAPISet ? &threadPoolAPI : nullptr;
+    }
+
   private:
     Context(const Context&) = delete;
     Context& operator =(const Context&) = delete;
@@ -120,6 +132,8 @@ OIDN_NAMESPACE_BEGIN
     ModuleLoader modules;
     std::map<DeviceType, std::unique_ptr<DeviceFactory>> deviceFactories;
     std::vector<Ref<PhysicalDevice>> physicalDevices;
+    OIDNThreadPoolAPI threadPoolAPI = {};
+    bool threadPoolAPISet = false;
   };
 
 OIDN_NAMESPACE_END

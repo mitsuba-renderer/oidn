@@ -5,40 +5,47 @@
 
 OIDN_NAMESPACE_BEGIN
 
-  // -----------------------------------------------------------------------------------------------
-  // PinningObserver
-  // -----------------------------------------------------------------------------------------------
+  static thread_local void* currentThreadPool = nullptr;
 
-  PinningObserver::PinningObserver(const std::shared_ptr<ThreadAffinity>& affinity)
-    : affinity(affinity)
+  const OIDNThreadPoolAPI& getThreadPoolAPI()
   {
-    observe(true);
+    const OIDNThreadPoolAPI* api = Context::get().getThreadPoolAPI();
+    if (api == nullptr)
+      throw Exception(Error::InvalidOperation, "no thread pool installed (see oidnSetThreadPoolAPI)");
+    return *api;
   }
 
-  PinningObserver::PinningObserver(const std::shared_ptr<ThreadAffinity>& affinity, tbb::task_arena& arena)
-    : tbb::task_scheduler_observer(arena),
-      affinity(affinity)
+  void* getCurrentThreadPool()
   {
-    observe(true);
+    return currentThreadPool;
   }
 
-  PinningObserver::~PinningObserver()
+  void setCurrentThreadPool(void* pool)
   {
-    observe(false);
+    currentThreadPool = pool;
   }
 
-  void PinningObserver::on_scheduler_entry(bool isWorker)
+  TaskArena::TaskArena(int numThreads)
   {
-    const int threadIndex = tbb::this_task_arena::current_thread_index();
-    if (threadIndex >= 0)
-      affinity->set(threadIndex);
+    const OIDNThreadPoolAPI& api = getThreadPoolAPI();
+    if (numThreads > 0)
+    {
+      pool = api.poolCreate(uint32_t(numThreads), 1);
+      if (pool == nullptr)
+        throw Exception(Error::Unknown, "failed to create thread pool");
+      owned = true;
+    }
   }
 
-  void PinningObserver::on_scheduler_exit(bool isWorker)
+  TaskArena::~TaskArena()
   {
-    const int threadIndex = tbb::this_task_arena::current_thread_index();
-    if (threadIndex >= 0)
-      affinity->restore(threadIndex);
+    if (owned)
+      getThreadPoolAPI().poolDestroy(pool);
+  }
+
+  int TaskArena::max_concurrency() const
+  {
+    return int(getThreadPoolAPI().poolSize(pool));
   }
 
 OIDN_NAMESPACE_END
